@@ -72,6 +72,16 @@ etamelt=1e+18;  % Partally molten rock viscosity
 timemax=1e+5*365.25*24*3600; % Max viscoelastic timestep, s
 stressmin=1e+4; % Lower stress limit for power law, Pa
 
+%Temperature parameters
+tempmax=30; % Maximal temperature change, allowed for one timestep, K
+ttop=273; % Temperature at the top, K
+dtdy=0.5/1000; %Adiabatic temperature gradient in the asthenosphere, K/m
+tbottom=1573+(dtdy*(ysize0-(100000+waterlev0))); % Temperature at the bottom of the model, K %1770
+age=4e+7*(365.25*24*3600);      % Oceanic plate age, s
+yast_cont=100000+waterlev0;     % Bottom of the continental lithosphere
+kappa=3e-6;                     % Thermal diffusivity of the mantle, m^2/s
+t100=tbottom-dtdy*(ysize-(100000+waterlev0)); % T of asthenosphere at y=100 km
+
 % Moving Markers: 0 = not moving, 1 = simple advection, 4 = 4-th order in space Runge-Kutta
 markmove=4;
 markmax=0.1; % Maximal marker displacement step, number of gridsteps
@@ -225,12 +235,12 @@ MFLOW(7,3)=4.0;             % n
 MFLOW(7,4)=471;             % Ea, kJ/mol
 MFLOW(7,5)=0;               % Va, cm^3
 MMU(7)=6.7e+10;             % shear modulus, Pa
-MPL(7,1)=1e+6;              % C0, Pa
-MPL(7,2)=1e+6;              % C1, Pa
-MPL(7,3)=0.1;                 % sin(FI0)
-MPL(7,4)=0.1;                 % sin(FI1)
-MPL(7,5)=0;                 % GAM0
-MPL(7,6)=0.1;                 % GAM1
+MPL(7,1)=1e+5;              % C0, Pa
+MPL(7,2)=1e+5;              % C1, Pa
+MPL(7,3)=0.;                 % sin(FI0)
+MPL(7,4)=0.;                 % sin(FI1)
+MPL(7,5)=0.;                 % GAM0
+MPL(7,6)=0.;                 % GAM1
 MCP(7)=1000;                % Cp, J/kg
 MKT(7,1)=0.73;              % k0, W/m/K
 MKT(7,2)=1293;              % a, W/m
@@ -337,23 +347,27 @@ for xm = 1:1:mxnum
             MI(mm1)=4;
         end
         % 5 = Lithosphere 
-        if(MY(mm1)>23000 && MY(mm1)<=100000) 
+        if(MY(mm1)>23000 && MY(mm1)<=110000) 
             MI(mm1)=5;
         end
         % Left continent
         % 8 = upper continental crust 
-        if(MX(mm1)<1000000 && MY(mm1)>=waterlev0 && MY(mm1)<30000) 
+        if(MX(mm1)<1000000 && MY(mm1)>=waterlev0 && MY(mm1)<27500) 
             MI(mm1)=8;
         end
-        if(MX(mm1)>=1000000 && MX(mm1)<1050000 && MY(mm1)>=10000+(MX(mm1)-1000000)/50000*3000 && MY(mm1)<30000-(MX(mm1)-1000000)/50000*14000) 
+        if(MX(mm1)>=1000000 && MX(mm1)<1050000 && MY(mm1)>=waterlev0+(MX(mm1)-1000000)/50000*3000 && MY(mm1)<27500-(MX(mm1)-1000000)/50000*14000) 
             MI(mm1)=8;
         end
         % 9 = lower continental crust 
-        if(MX(mm1)<1000000 && MY(mm1)>=30000 && MY(mm1)<50000) 
+        if(MX(mm1)<1000000 && MY(mm1)>=27500 && MY(mm1)<45000) 
             MI(mm1)=9;
         end
-        if(MX(mm1)>=1000000 && MX(mm1)<1050000 && MY(mm1)>=30000-(MX(mm1)-1000000)/50000*14000 && MY(mm1)<50000-(MX(mm1)-1000000)/50000*24000) 
+        if(MX(mm1)>=1000000 && MX(mm1)<1050000 && MY(mm1)>=27500-(MX(mm1)-1000000)/50000*14000 && MY(mm1)<45000-(MX(mm1)-1000000)/50000*24000) 
             MI(mm1)=9;
+        end
+        % Asthenosphere below the oceanic plate
+        if(MY(mm1)>80000 && MY(mm1)<=100000+waterlev0 && MX(mm1)>1300000-(MY(mm1)-18000)/24000*50000) 
+            MI(mm1)=6;
         end
 %         % Right continent
 %         % 8 = upper continental crust 
@@ -372,27 +386,15 @@ for xm = 1:1:mxnum
 %         end
         % Subduction zone nucleating
         % 7 = Weak zone in the mantle
-        if(MY(mm1)>14000 && MY(mm1)<100000 && MX(mm1)>1050000-(MY(mm1)-18000)/24000*50000 && MX(mm1)<1070000-(MY(mm1)-18000)/24000*50000) 
+        if(MY(mm1)>14000 && MY(mm1)<100000+waterlev0 && MX(mm1)>1050000-(MY(mm1)-18000)/24000*50000 && MX(mm1)<1070000-(MY(mm1)-18000)/24000*50000) 
             MI(mm1)=7;
         end
 %         % 3 = Weak zone in the oceanic crust
 %          if(MY(mm1)>10000 && MY(mm1)<=100000 && MX(mm1)>1030000-(MY(mm1)-18000)/24000*50000 && MX(mm1)<1060000-(MY(mm1)-18000)/24000*50000) 
 %              MI(mm1)=3;
 %          end
-        % Asthenosphere below the oceanic plate
-        if(MY(mm1)>80000 && MY(mm1)<=120000 && MX(mm1)>1300000-(MY(mm1)-18000)/24000*75000) 
-            MI(mm1)=6;
-        end
-       
+
         % Initial thermal structure
-        tempmax=30; % Maximal temperature change, allowed for one timestep, K
-        ttop=273; % Temperature at the top, K
-        dtdy=0.5/1000; %Adiabatic temperature gradient in the asthenosphere, K/m
-        tbottom=1770; %1573+(dtdy*(ysize0-(100000+waterlev0))); % Temperature at the bottom of the model, K
-        age=4e+7*(365.25*24*3600);      % Oceanic plate age, s
-        yast_cont=100000+waterlev0;     % Bottom of the continental lithosphere
-        kappa=3e-6;                     % Thermal diffusivity of the mantle, m^2/s
-        t100=tbottom-dtdy*(ysize-(100000+waterlev0)); % T of asthenosphere at y=100 km
         
         MTK(mm1)=tbottom-dtdy*(ysize-MY(mm1));
         % Sticky water
@@ -400,7 +402,7 @@ for xm = 1:1:mxnum
             MTK(mm1)=ttop;
         end
         %Oceanic geotherm after Turcotte & Schubert (2002)
-        if(MX(mm1)>1050000 && MY(mm1)>waterlev0 && MY(mm1)<100000)
+        if(MX(mm1)>1050000 && MY(mm1)>waterlev0 && MY(mm1)<100000+waterlev0)
             MTK(mm1)=t100+(ttop-t100)*(1-erf((MY(mm1)-waterlev0)/2/(kappa*age)^0.5));
         end
         % Linear continental geotherm  
@@ -430,11 +432,6 @@ for xm = 1:1:mxnum
 end
 marknum=mm1; % Save Number of markers
 
-dsubgrids=1; % Numerical Subgrid stress diffusion coefficient
-dsubgridt=1; % Numerical Subgrid temperature diffusion coefficient
-frictyn=1; % Shear heating on(1)/off(0)
-adiabyn=1; % Adiabatic heating on(1)/off(0)
-
 % Topography model
 tsize=xsize; % Topography model size in horizontal direction
 tnum=1001; %number of topography grid points
@@ -457,7 +454,7 @@ Ks=dYtdt*dx^2/d2Yt;
 orography=0; %Flag for orography, if =1, then check orogr down below
 clim_grad=0;  %Flag for climate gradient
 hlcg=5; %Half length for climate gradient (in grid nodes left and right of tnum/2)
-ksn=1.e-11; n=1; m=0.5;
+ksn=1.e-20; n=1; m=0.5;
             
 topotime=zeros(stepmax,1); %time for topographic evolution
 topohigh=zeros(stepmax,tnum); %topography in time
@@ -620,6 +617,11 @@ for i=1:1:ynum
     brightt(i,2)=1;
 end
 
+dsubgrids=1; % Numerical Subgrid stress diffusion coefficient
+dsubgridt=1; % Numerical Subgrid temperature diffusion coefficient
+frictyn=1; % Shear heating on(1)/off(0)
+adiabyn=1; % Adiabatic heating on(1)/off(0)
+
 etas1 = zeros(ynum,xnum);       % Viscosity for shear stress
 etan1 = zeros(ynum-1,xnum-1);   % Viscosity for normal stress
 mus1 = zeros(ynum,xnum);        % Shear modulus for shear stress
@@ -634,7 +636,6 @@ kt1 = zeros(ynum,xnum);         % Thermal conductivity
 hr1 = zeros(ynum,xnum);         % Radiogenic heat production
 ha1 = zeros(ynum,xnum);         % Adiabatic heat production/consuming
 pr1 = zeros(ynum-1,xnum-1);     % Pressure
-
 
 % Main Time cycle
 timesum=0; timestepd=timemax; ntimestep=0;
