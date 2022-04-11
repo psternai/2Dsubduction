@@ -78,7 +78,7 @@ ttop=273; % Temperature at the top, K
 dtdy=0.5/1000; %Adiabatic temperature gradient in the asthenosphere, K/m
 tbottom=1573+(dtdy*(ysize0-(100000+waterlev0))); % Temperature at the bottom of the model, K %1770
 age=4e+7*(365.25*24*3600);      % Oceanic plate age, s
-yast_cont=100000+waterlev0;     % Bottom of the continental lithosphere
+yast_cont=110000+waterlev0;     % Bottom of the continental lithosphere //--------- BEFORE:100000+waterlev0; ---------\\
 kappa=3e-6;                     % Thermal diffusivity of the mantle, m^2/s
 t100=tbottom-dtdy*(ysize-(100000+waterlev0)); % T of asthenosphere at y=100 km
 
@@ -454,7 +454,7 @@ Ks=dYtdt*dx^2/d2Yt;
 orography=0; %Flag for orography, if =1, then check orogr down below
 clim_grad=0;  %Flag for climate gradient
 hlcg=5; %Half length for climate gradient (in grid nodes left and right of tnum/2)
-ksn=1.e-20; n=1; m=0.5;
+ksn=1.e-16; n=1; m=0.5;
             
 topotime=zeros(stepmax,1); %time for topographic evolution
 topohigh=zeros(stepmax,tnum); %topography in time
@@ -533,7 +533,7 @@ gridy(ynum)=ysize;
 
 %BOUNDARY CONDITIONS
 % Horizontal convergence velocity, m/s
-vel=3/(100.*365.25*24*3600); % cm/yr
+vel=1/(100.*365.25*24*3600); % cm/yr % ///---------- BEFORE:3/(100.*365.25*24*3600); ----------\\\
 
 % Pressure boundary conditions
 % prfirst(1) = boundary condition mode:
@@ -1268,7 +1268,7 @@ while timesum/(1e6*3600*24*365) < model_time_end % or alternatively: for ntimest
     % by calling function Stokes_Continuity_solver_grid() 
     % with viscoelastic numerical viscosity
     % and modified right parts
-    [vx1,resx1,vy1,resy1,pr1,resc1]=Stokes_Continuity_solver(prfirst,etas0,etan0,xnum,ynum,gridx,gridy,RX1,RY1,RC1,bleft,bright,btop,bbottom,bintern);
+    [vx1,resx1,vy1,resy1,pr1,resc1]=Stokes_Continuity_solver_ll(prfirst,etas0,etan0,xnum,ynum,gridx,gridy,RX1,RY1,RC1,bleft,bright,btop,bbottom,bintern);
 
     % Computing EPS'xx=-EPS'yy, EPSxy=EPSyx deviatoric strain rate tensor components from vx, vy
     % Computing spin tensor Espin
@@ -1757,7 +1757,7 @@ while timesum/(1e6*3600*24*365) < model_time_end % or alternatively: for ntimest
         tk0=tk1;
         while (timesteps<timestep)
             % Solving Temperature equation with thermal timestep
-           [tk2,rest]=Temperature_solver_grid(timestept,xnum,ynum,gridx,gridy,kt1,rhocp1,tk0,RT1,bleftt,brightt,btopt,bbottomt);
+           [tk2,rest]=Temperature_solver_grid_ll(timestept,xnum,ynum,gridx,gridy,kt1,rhocp1,tk0,RT1,bleftt,brightt,btopt,bbottomt);
            % Computing temperature changes
             dtk1=tk2-tk0;
             % Checking temperature changes
